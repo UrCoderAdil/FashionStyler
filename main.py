@@ -1,5 +1,6 @@
 import os
 from embedder import get_image_embedding
+from feature_extractor import extract_features
 
 def cosine_similarity(a, b):
     return (a @ b.T).item()
@@ -7,6 +8,7 @@ def cosine_similarity(a, b):
 # Load dataset
 folder = "data/outfits"
 images = os.listdir(folder)
+
 
 # Precompute outfit embeddings
 outfits = []
@@ -27,6 +29,7 @@ print("Done.\n")
 # --- USER INPUT ---
 user_image = input("Enter path to your image: ")
 
+features = extract_features(user_image)
 user_emb = get_image_embedding(user_image)
 
 # --- FIND SIMILARITY ---
