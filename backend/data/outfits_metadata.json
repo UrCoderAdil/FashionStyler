@@ -1,0 +1,112 @@
+[
+  {
+    "filename": "i0.jpg",
+    "style": "casual",
+    "occasion": "daily",
+    "color": "neutral",
+    "fit": "slim",
+    "body_suit": ["balanced", "broad_shoulders"],
+    "season": "summer",
+    "price_range": "low"
+  },
+  {
+    "filename": "i1.jpg",
+    "style": "formal",
+    "occasion": "office",
+    "color": "cool",
+    "fit": "slim",
+    "body_suit": ["balanced", "broad_shoulders"],
+    "season": "winter",
+    "price_range": "high"
+  },
+  {
+    "filename": "i2.jpg",
+    "style": "streetwear",
+    "occasion": "daily",
+    "color": "neutral",
+    "fit": "loose",
+    "body_suit": ["balanced", "wide_hips"],
+    "season": "summer",
+    "price_range": "low"
+  },
+  {
+    "filename": "i3.jpg",
+    "style": "casual",
+    "occasion": "party",
+    "color": "warm",
+    "fit": "slim",
+    "body_suit": ["wide_hips", "balanced"],
+    "season": "summer",
+    "price_range": "medium"
+  },
+  {
+    "filename": "i4.jpg",
+    "style": "formal",
+    "occasion": "office",
+    "color": "cool",
+    "fit": "slim",
+    "body_suit": ["broad_shoulders", "balanced"],
+    "season": "winter",
+    "price_range": "high"
+  },
+  {
+    "filename": "i5.jpg",
+    "style": "streetwear",
+    "occasion": "daily",
+    "color": "warm",
+    "fit": "loose",
+    "body_suit": ["wide_hips", "balanced"],
+    "season": "summer",
+    "price_range": "low"
+  },
+  {
+    "filename": "i6.jpg",
+    "style": "casual",
+    "occasion": "daily",
+    "color": "cool",
+    "fit": "slim",
+    "body_suit": ["balanced", "broad_shoulders"],
+    "season": "winter",
+    "price_range": "medium"
+  },
+  {
+    "filename": "i7.jpg",
+    "style": "formal",
+    "occasion": "party",
+    "color": "neutral",
+    "fit": "slim",
+    "body_suit": ["balanced", "wide_hips"],
+    "season": "winter",
+    "price_range": "high"
+  },
+  {
+    "filename": "i8.jpg",
+    "style": "streetwear",
+    "occasion": "daily",
+    "color": "warm",
+    "fit": "loose",
+    "body_suit": ["balanced", "broad_shoulders"],
+    "season": "summer",
+    "price_range": "medium"
+  },
+  {
+    "filename": "i9.jpg",
+    "style": "casual",
+    "occasion": "party",
+    "color": "cool",
+    "fit": "slim",
+    "body_suit": ["wide_hips", "balanced"],
+    "season": "summer",
+    "price_range": "medium"
+  },
+  {
+    "filename": "i10.jpg",
+    "style": "formal",
+    "occasion": "office",
+    "color": "neutral",
+    "fit": "slim",
+    "body_suit": ["balanced", "broad_shoulders"],
+    "season": "winter",
+    "price_range": "high"
+  }
+]
