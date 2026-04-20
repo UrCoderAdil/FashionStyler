@@ -1,1 +1,61 @@
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.spec
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+*.env
+
+# ── Dataset & Large Binary Files ──────────────────────────────────────────────
+# Outfit images — too large for GitHub (500+ images, ~30 MB)
+backend/data/outfits/
+# Keep the metadata JSON (small, needed for dataset structure documentation)
+!backend/data/outfits_metadata.json
+
+# Root-level stale data folder (superseded by backend/data/)
+data/
+
+# CLIP embedding cache — regenerated automatically on first run
+backend/embeddings.pkl
+
+# ── ML Models ─────────────────────────────────────────────────────────────────
+# MediaPipe .task / .tflite model files (downloaded separately)
+backend/models/
+*.task
+*.tflite
+
+# ── Temporary / Upload Files ──────────────────────────────────────────────────
+*.tmp
+*.temp
+tmp/
+temp/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.npm
+
+# ── IDE & OS ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/

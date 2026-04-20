@@ -22,12 +22,12 @@ AI_Personal_Stylist/
 │   ├── feature_extractor.py  # 8-type body + face detection
 │   ├── virtual_tryon.py      # rembg + Pose guided overlay
 │   ├── social_sharing.py     # Pillow share card generator
-│   ├── recommender.py        # Hybrid scoring & ranking
+│   ├── recommender.py        # Hybrid scoring & ranking (batched matmul)
 │   ├── dataset_loader.py     # Metadata JSON loader
-│   ├── embedder.py           # CLIP image embedding with cache
+│   ├── embedder.py           # CLIP embedding + N×512 retrieval matrix
 │   ├── data/
-│   │   ├── outfits/          # Outfit images (i0.jpg ... i10.jpg)
-│   │   └── outfits_metadata.json # Rich product data
+│   │   ├── outfits/          # 579 outfit images (git-ignored — see below)
+│   │   └── outfits_metadata.json
 │   └── data_collection/
 │       └── auto_annotate.py  # Batch CLIP classifier for dataset expansion
 └── frontend/
@@ -38,12 +38,16 @@ AI_Personal_Stylist/
     │       └── magazine.css  # Editorial design system
 ```
 
+> **Note on dataset images**: `backend/data/outfits/` is listed in `.gitignore` because it contains 579 images (~30 MB). Download or generate them separately (see [Dataset Expansion](#️-dataset-expansion) below).
+
 ## 🚀 Quick Start
 
 ### 1. Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt
+# Place outfit images in data/outfits/ then generate metadata + embeddings:
+python data_collection/auto_annotate.py --input data/outfits --output data/outfits_metadata.json
 python -m uvicorn main:app --reload --port 8000
 ```
 
@@ -55,11 +59,15 @@ npm run dev
 ```
 
 ## 🛠️ Dataset Expansion
-To add 100s of new outfits, simply create a folder of images and run the auto-annotator:
+To add new outfits, drop images into a folder and run the auto-annotator:
 ```bash
-python backend/data_collection/auto_annotate.py --input ./new_photos --output metadata.json
+python backend/data_collection/auto_annotate.py --input ./new_photos --output metadata_new.json
 ```
-Merge the generated JSON into `outfits_metadata.json` and move the images to `backend/data/outfits/`.
+Merge the generated JSON into `outfits_metadata.json` and move the images to `backend/data/outfits/`. The CLIP embedding cache will be automatically regenerated on the next server start.
+
+## ⚡ Retrieval Architecture
+
+On startup, all outfit embeddings are stacked into a single **(N × 512)** matrix in GPU/CPU memory. Each recommendation request is resolved with **one batched matrix multiply** — making retrieval time essentially constant regardless of dataset size.
 
 ---
 *Built with ❤️ by AI Personal Stylist Team.*

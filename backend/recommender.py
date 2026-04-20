@@ -8,7 +8,7 @@ Scoring formula:
               + 0.20 * user_preference_match
 """
 import torch
-from embedder import get_image_embedding
+from embedder import get_image_embedding, batch_similarities
 from utils import normalize_score, budget_to_price_range, skin_tone_to_colors, body_type_to_fits
 
 WEIGHTS = {
@@ -82,13 +82,10 @@ def filter_outfits(dataset: list[dict], user_preferences: dict) -> list[dict]:
 # Step 2 — Scores
 # ---------------------------------------------------------------------------
 def compute_similarity(user_emb: torch.Tensor, outfit_emb: torch.Tensor) -> float:
-
+    """Single-pair cosine similarity (kept for reference / offline use)."""
     device = outfit_emb.device
-    user_emb = user_emb.to(device)
-    
-    user_emb = user_emb.float()
+    user_emb = user_emb.float().to(device)
     outfit_emb = outfit_emb.float()
-    
     return float((user_emb @ outfit_emb.T).item())
 
 def compute_body_match(features: dict, outfit: dict) -> float:
@@ -204,14 +201,44 @@ def recommend(
     user_preferences: dict | None = None,
     top_n: int = 5,
 ) -> list[dict]:
+    """
+    Retrieve top-N outfits.
+
+    Speed path:
+      1. Filter dataset by hard preferences (occasion / budget / style).
+      2. Embed user photo once.
+      3. Compute ALL cosine similarities in ONE batched matmul via
+         batch_similarities() — significantly faster than a Python loop.
+      4. Apply body / skin / preference scores per candidate.
+      5. Rank & diversify.
+    """
     prefs = user_preferences or {}
 
+    # Step 1 — filter
     candidates = filter_outfits(dataset, prefs)
-    user_emb   = get_image_embedding(user_image_path)
 
+    # Step 2 — embed user image (single CLIP forward pass)
+    user_emb = get_image_embedding(user_image_path)  # (1, 512)
+
+    # Step 3 — batched similarity for ALL candidates at once
+    # Build a per-candidate index map so we can look up scores by position
+    candidate_set = {o["filename"] for o in candidates}
+
+    # batch_similarities returns scores for the *full* dataset in order;
+    # we only need the subset that survived the filter.
+    all_sims = batch_similarities(user_emb)  # (N_total,) tensor
+
+    # Build a filename→sim lookup from the full dataset (same order as matrix)
+    # dataset is passed in and corresponds 1-to-1 with outfit_matrix rows.
+    sim_lookup: dict[str, float] = {
+        o["filename"]: float(all_sims[i].item())
+        for i, o in enumerate(dataset)
+    }
+
+    # Step 4 — score each filtered candidate
     scored = []
     for outfit in candidates:
-        clip_sim   = compute_similarity(user_emb, outfit["embedding"])
+        clip_sim   = sim_lookup.get(outfit["filename"], 0.0)
         body_match = compute_body_match(features, outfit)
         skin_match = compute_skin_tone_match(features, outfit)
         pref_match = compute_preference_match(prefs, outfit)
@@ -230,6 +257,7 @@ def recommend(
             "explanation": generate_explanation(features, prefs, outfit, sub),
         })
 
+    # Step 5 — rank & diversify
     results = get_top_recommendations(scored, top_n=top_n)
     for r in results:
         r.pop("_div", None)
