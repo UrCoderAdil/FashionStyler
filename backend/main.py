@@ -1,26 +1,21 @@
 """
-main.py — AI Personal Stylist FastAPI backend.
+main.py — AI Personal Stylist FastAPI backend v3.0
 
 Endpoints:
-  GET  /              → health check
-  POST /api/analyze   → upload image + optional preferences → recommendations
-
-On startup:
-  • loads dataset metadata
-  • computes / loads cached CLIP embeddings
+  GET  /                    → health check
+  POST /api/analyze         → image + prefs → features + recommendations
+  POST /api/virtual-tryon   → image + outfit → try-on PNG
+  POST /api/share-card      → image + outfit + stats → 1080x1080 PNG (base64)
 """
-import os
-import sys
-import shutil
-import tempfile
+import os, sys, shutil, tempfile
 from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-# Resolve imports relative to this file
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dataset_loader import load_dataset
@@ -29,7 +24,7 @@ from feature_extractor import extract_features
 from recommender import recommend
 
 # ---------------------------------------------------------------------------
-# Lifespan — dataset + embeddings loaded once on startup
+# Startup — preload dataset + embeddings
 # ---------------------------------------------------------------------------
 outfit_dataset: list[dict] = []
 
@@ -37,39 +32,32 @@ outfit_dataset: list[dict] = []
 async def lifespan(app: FastAPI):
     global outfit_dataset
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-    print("[Server] Starting AI Personal Stylist backend …")
-
-    outfits = load_dataset(data_dir)              # load metadata + paths
-    outfit_dataset = compute_embeddings(outfits)  # attach CLIP embeddings (cached)
-
+    print("[Server] Loading outfit dataset …")
+    outfits = load_dataset(data_dir)
+    outfit_dataset = compute_embeddings(outfits)
     print(f"[Server] Ready — {len(outfit_dataset)} outfits indexed.")
     yield
     outfit_dataset = []
 
-
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
-app = FastAPI(
-    title="AI Personal Stylist",
-    description="Hybrid CLIP + rule-based outfit recommendation API",
-    version="2.0.0",
-    lifespan=lifespan,
-)
+app = FastAPI(title="AI Personal Stylist", version="3.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"], allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
 )
 
-# Serve outfit images as static files
-_OUTFITS_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "data", "outfits"
-)
+_OUTFITS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "outfits")
 app.mount("/outfits", StaticFiles(directory=_OUTFITS_DIR), name="outfits")
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _save_upload(file: UploadFile) -> str:
+    suffix = os.path.splitext(file.filename or "photo")[-1] or ".jpg"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        return tmp.name
 
 
 # ---------------------------------------------------------------------------
@@ -77,88 +65,118 @@ app.mount("/outfits", StaticFiles(directory=_OUTFITS_DIR), name="outfits")
 # ---------------------------------------------------------------------------
 @app.get("/")
 def health():
-    return {
-        "status": "ok",
-        "version": "2.0.0",
-        "outfits_loaded": len(outfit_dataset),
-    }
+    return {"status": "ok", "version": "3.0.0", "outfits_loaded": len(outfit_dataset)}
 
 
 @app.post("/api/analyze")
 async def analyze(
-    file: Annotated[UploadFile, File(description="User selfie / full-body photo")],
-    style: Annotated[str, Form()] = "",
-    occasion: Annotated[str, Form()] = "",
-    budget: Annotated[str, Form()] = "",
+    file:             Annotated[UploadFile, File()],
+    style:            Annotated[str, Form()] = "",
+    occasion:         Annotated[str, Form()] = "",
+    budget:           Annotated[str, Form()] = "",
     color_preference: Annotated[str, Form()] = "",
 ):
-    """
-    Analyze an uploaded image and return personalized outfit recommendations.
-
-    Form fields (all optional):
-      - style: casual | formal | streetwear
-      - occasion: daily | party | office
-      - budget: low | medium | high
-      - color_preference: warm | cool | neutral
-    """
+    """Analyze photo → body type + color season + outfit recommendations."""
     if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
-
+        raise HTTPException(400, "Uploaded file must be an image.")
     if not outfit_dataset:
-        raise HTTPException(status_code=503, detail="Dataset is still loading, retry in a moment.")
+        raise HTTPException(503, "Dataset still loading — retry shortly.")
 
-    # Save upload to a temp file
-    suffix = os.path.splitext(file.filename or "photo")[-1] or ".jpg"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        shutil.copyfileobj(file.file, tmp)
-        tmp_path = tmp.name
-
+    tmp_path = _save_upload(file)
     try:
-        # Build user preferences dict from form fields
-        user_preferences = {
-            k: v.strip().lower()
-            for k, v in {
-                "style":            style,
-                "occasion":         occasion,
-                "budget":           budget,
-                "color_preference": color_preference,
-            }.items()
-            if v.strip()
-        }
-
-        # Feature extraction
         features = extract_features(tmp_path)
 
-        # Recommendation pipeline
-        results = recommend(
-            user_image_path=tmp_path,
-            features=features,
-            dataset=outfit_dataset,
-            user_preferences=user_preferences,
-            top_n=5,
-        )
+        prefs = {k: v.strip().lower() for k, v in {
+            "style": style, "occasion": occasion,
+            "budget": budget, "color_preference": color_preference,
+        }.items() if v.strip()}
 
-        # Shape API response
-        recommendations = []
-        for r in results:
-            recommendations.append({
-                "filename":    r["filename"],
-                "image_url":   f"/outfits/{r['filename']}",
-                "style":       r.get("style", ""),
-                "occasion":    r.get("occasion", ""),
-                "color":       r.get("color", ""),
-                "fit":         r.get("fit", ""),
-                "price_range": r.get("price_range", ""),
-                "scores":      r["scores"],
-                "final_score": r["final_score"],
-                "explanation": r["explanation"],
-            })
+        results = recommend(tmp_path, features, outfit_dataset, prefs, top_n=5)
+
+        recommendations = [{
+            "filename":    r["filename"],
+            "image_url":   f"/outfits/{r['filename']}",
+            "style":       r.get("style", ""),
+            "occasion":    r.get("occasion", ""),
+            "color":       r.get("color", ""),
+            "fit":         r.get("fit", ""),
+            "price_range": r.get("price_range", ""),
+            "brand":       r.get("brand", ""),
+            "actual_price": r.get("actual_price", ""),
+            "product_url": r.get("product_url", ""),
+            "description": r.get("description", ""),
+            "scores":      r["scores"],
+            "final_score": r["final_score"],
+            "explanation": r["explanation"],
+        } for r in results]
 
         return {
-            "features":        features,
-            "preferences_used": user_preferences,
-            "recommendations": recommendations,
+            "features":         features,
+            "preferences_used": prefs,
+            "recommendations":  recommendations,
         }
-
     finally:
         os.unlink(tmp_path)
+
+
+@app.post("/api/virtual-tryon")
+async def virtual_tryon(
+    file:            Annotated[UploadFile, File()],
+    outfit_filename: Annotated[str, Form()],
+):
+    """Overlay outfit image over user photo using pose-guided compositing."""
+    from virtual_tryon import create_virtual_tryon
+
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(400, "Uploaded file must be an image.")
+
+    outfit_path = os.path.join(_OUTFITS_DIR, outfit_filename)
+    if not os.path.exists(outfit_path):
+        raise HTTPException(404, f"Outfit '{outfit_filename}' not found.")
+
+    user_path = _save_upload(file)
+    out_path  = os.path.join(tempfile.gettempdir(), f"tryon_{outfit_filename}.png")
+
+    try:
+        result_path = create_virtual_tryon(user_path, outfit_path, out_path)
+        return FileResponse(result_path, media_type="image/png",
+                            filename=f"tryon_{outfit_filename}.png")
+    except Exception as e:
+        raise HTTPException(500, f"Try-on generation failed: {e}")
+    finally:
+        os.unlink(user_path)
+
+
+@app.post("/api/share-card")
+async def share_card(
+    file:            Annotated[UploadFile, File()],
+    outfit_filename: Annotated[str, Form()],
+    body_type:       Annotated[str, Form()] = "",
+    color_season:    Annotated[str, Form()] = "",
+    match_score:     Annotated[float, Form()] = 0.0,
+    style:           Annotated[str, Form()] = "",
+    occasion:        Annotated[str, Form()] = "",
+):
+    """Generate 1080×1080 Instagram-ready share card as base64 PNG."""
+    from social_sharing import create_share_card
+
+    outfit_path = os.path.join(_OUTFITS_DIR, outfit_filename)
+    if not os.path.exists(outfit_path):
+        raise HTTPException(404, f"Outfit '{outfit_filename}' not found.")
+
+    user_path = _save_upload(file)
+    try:
+        card_b64 = create_share_card(
+            user_image_path=user_path,
+            outfit_image_path=outfit_path,
+            body_type=body_type or "unknown",
+            color_season=color_season or "unknown",
+            match_score=match_score,
+            style=style,
+            occasion=occasion,
+        )
+        return {"share_card": card_b64}
+    except Exception as e:
+        raise HTTPException(500, f"Share card generation failed: {e}")
+    finally:
+        os.unlink(user_path)

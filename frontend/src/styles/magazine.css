@@ -1,0 +1,228 @@
+/* Magazine UI Design System */
+:root {
+  --black: #000000;
+  --white: #FFFFFF;
+  --cream: #FAF9F6;
+  --gray-light: #F1F1F1;
+  --gray: #E5E5E5;
+  --gray-dark: #666666;
+  --red: #C41E3A;
+  --gold: #D4AF37;
+  
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-accent: 'Bodoni Moda', serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--cream);
+  color: var(--black);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.magazine-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header / Masthead */
+.masthead {
+  text-align: center;
+  padding: 4rem 0;
+  border-bottom: 2px solid var(--black);
+  margin-bottom: 4rem;
+}
+
+.masthead-date {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gray-dark);
+  margin-bottom: 1rem;
+}
+
+.masthead-title {
+  font-family: var(--font-display);
+  font-size: 5rem;
+  font-weight: 900;
+  line-height: 0.8;
+  letter-spacing: -0.05em;
+  margin: 0;
+}
+
+.masthead-subtitle {
+  font-family: var(--font-accent);
+  font-size: 1.5rem;
+  font-style: italic;
+  letter-spacing: 0.3em;
+  margin-top: 0.5rem;
+}
+
+/* Polaroids */
+.polaroid-frame {
+  background: var(--white);
+  padding: 1rem 1rem 3rem 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  transform: rotate(-1deg);
+  transition: transform 0.3s ease;
+}
+
+.polaroid-frame:hover {
+  transform: rotate(0deg) scale(1.02);
+}
+
+/* Editorial Spread */
+.editorial-spread {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .editorial-spread {
+    grid-template-columns: 1fr;
+  }
+}
+
+.page {
+  background: var(--white);
+  padding: 3rem;
+  border: 1px solid var(--gray);
+  position: relative;
+}
+
+.page-left {
+  border-right: 4px solid var(--black);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  border-bottom: 2px solid var(--black);
+  padding-bottom: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Buttons */
+.btn-editorial {
+  background: var(--black);
+  color: var(--white);
+  padding: 1rem 2.5rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-editorial:hover {
+  background: var(--red);
+  transform: translateY(-2px);
+}
+
+.btn-editorial:disabled {
+  background: var(--gray);
+  cursor: not-allowed;
+}
+
+/* Swatches */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.swatch {
+  aspect-ratio: 1;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Masonry Card */
+.outfit-card-magazine {
+  background: var(--white);
+  border: 1px solid var(--gray);
+  margin-bottom: 2rem;
+  break-inside: avoid;
+  transition: box-shadow 0.3s ease;
+}
+
+.outfit-card-magazine:hover {
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.card-image-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-image-wrap img {
+  width: 100%;
+  display: block;
+}
+
+.try-on-btn {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 0.75rem;
+  border: none;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.card-image-wrap:hover .try-on-btn {
+  transform: translateY(0);
+}
+
+/* Page Flip Loader */
+.flip-loader {
+  perspective: 1000px;
+  width: 200px;
+  height: 280px;
+  margin: 0 auto;
+}
+
+.flip-page {
+  width: 100%;
+  height: 100%;
+  background: white;
+  border: 1px solid var(--gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  font-family: var(--font-accent);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: left center;
+  animation: pageFlip 2s infinite ease-in-out;
+  backface-visibility: hidden;
+}
+
+@keyframes pageFlip {
+  0% { transform: rotateY(0); }
+  50% { transform: rotateY(-180deg); }
+  100% { transform: rotateY(-180deg); }
+}
+
+/* Typography Helpers */
+.font-display { font-family: var(--font-display); }
+.font-accent { font-family: var(--font-accent); }
+.italic { font-style: italic; }
+.uppercase { text-transform: uppercase; }
+.tracking-widest { letter-spacing: 0.2em; }

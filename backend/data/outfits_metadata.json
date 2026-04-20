@@ -1,112 +1,13 @@
 [
-  {
-    "filename": "i0.jpg",
-    "style": "casual",
-    "occasion": "daily",
-    "color": "neutral",
-    "fit": "slim",
-    "body_suit": ["balanced", "broad_shoulders"],
-    "season": "summer",
-    "price_range": "low"
-  },
-  {
-    "filename": "i1.jpg",
-    "style": "formal",
-    "occasion": "office",
-    "color": "cool",
-    "fit": "slim",
-    "body_suit": ["balanced", "broad_shoulders"],
-    "season": "winter",
-    "price_range": "high"
-  },
-  {
-    "filename": "i2.jpg",
-    "style": "streetwear",
-    "occasion": "daily",
-    "color": "neutral",
-    "fit": "loose",
-    "body_suit": ["balanced", "wide_hips"],
-    "season": "summer",
-    "price_range": "low"
-  },
-  {
-    "filename": "i3.jpg",
-    "style": "casual",
-    "occasion": "party",
-    "color": "warm",
-    "fit": "slim",
-    "body_suit": ["wide_hips", "balanced"],
-    "season": "summer",
-    "price_range": "medium"
-  },
-  {
-    "filename": "i4.jpg",
-    "style": "formal",
-    "occasion": "office",
-    "color": "cool",
-    "fit": "slim",
-    "body_suit": ["broad_shoulders", "balanced"],
-    "season": "winter",
-    "price_range": "high"
-  },
-  {
-    "filename": "i5.jpg",
-    "style": "streetwear",
-    "occasion": "daily",
-    "color": "warm",
-    "fit": "loose",
-    "body_suit": ["wide_hips", "balanced"],
-    "season": "summer",
-    "price_range": "low"
-  },
-  {
-    "filename": "i6.jpg",
-    "style": "casual",
-    "occasion": "daily",
-    "color": "cool",
-    "fit": "slim",
-    "body_suit": ["balanced", "broad_shoulders"],
-    "season": "winter",
-    "price_range": "medium"
-  },
-  {
-    "filename": "i7.jpg",
-    "style": "formal",
-    "occasion": "party",
-    "color": "neutral",
-    "fit": "slim",
-    "body_suit": ["balanced", "wide_hips"],
-    "season": "winter",
-    "price_range": "high"
-  },
-  {
-    "filename": "i8.jpg",
-    "style": "streetwear",
-    "occasion": "daily",
-    "color": "warm",
-    "fit": "loose",
-    "body_suit": ["balanced", "broad_shoulders"],
-    "season": "summer",
-    "price_range": "medium"
-  },
-  {
-    "filename": "i9.jpg",
-    "style": "casual",
-    "occasion": "party",
-    "color": "cool",
-    "fit": "slim",
-    "body_suit": ["wide_hips", "balanced"],
-    "season": "summer",
-    "price_range": "medium"
-  },
-  {
-    "filename": "i10.jpg",
-    "style": "formal",
-    "occasion": "office",
-    "color": "neutral",
-    "fit": "slim",
-    "body_suit": ["balanced", "broad_shoulders"],
-    "season": "winter",
-    "price_range": "high"
-  }
+  {"filename":"i0.jpg","style":"casual","occasion":"daily","color":"neutral","fit":"slim","body_suit":["balanced","broad_shoulders"],"season":"summer","price_range":"low","brand":"H&M","actual_price":"$29","product_url":"https://www2.hm.com/","description":"Effortless summer casual with clean lines.","tags":["trending","basics"],"gender":"unisex"},
+  {"filename":"i1.jpg","style":"formal","occasion":"office","color":"cool","fit":"slim","body_suit":["balanced","broad_shoulders"],"season":"winter","price_range":"high","brand":"Zara","actual_price":"$89","product_url":"https://www.zara.com/","description":"Polished office look with structured silhouette.","tags":["bestseller","office"],"gender":"unisex"},
+  {"filename":"i2.jpg","style":"streetwear","occasion":"daily","color":"neutral","fit":"loose","body_suit":["balanced","wide_hips","pear"],"season":"summer","price_range":"low","brand":"Uniqlo","actual_price":"$39","product_url":"https://www.uniqlo.com/","description":"Relaxed streetwear staple for everyday wear.","tags":["comfortable","everyday"],"gender":"unisex"},
+  {"filename":"i3.jpg","style":"casual","occasion":"party","color":"warm","fit":"slim","body_suit":["wide_hips","balanced","pear","hourglass"],"season":"summer","price_range":"medium","brand":"ASOS","actual_price":"$55","product_url":"https://www.asos.com/","description":"Fun party look with warm, vibrant tones.","tags":["party","summer"],"gender":"female"},
+  {"filename":"i4.jpg","style":"formal","occasion":"office","color":"cool","fit":"slim","body_suit":["broad_shoulders","balanced","inverted_triangle"],"season":"winter","price_range":"high","brand":"COS","actual_price":"$120","product_url":"https://www.cos.com/","description":"Sharp tailored piece for command in the boardroom.","tags":["premium","tailored"],"gender":"male"},
+  {"filename":"i5.jpg","style":"streetwear","occasion":"daily","color":"warm","fit":"loose","body_suit":["wide_hips","balanced","apple"],"season":"summer","price_range":"low","brand":"Nike","actual_price":"$45","product_url":"https://www.nike.com/","description":"Laid-back streetwear with warm-tone accents.","tags":["sporty","comfortable"],"gender":"unisex"},
+  {"filename":"i6.jpg","style":"casual","occasion":"daily","color":"cool","fit":"slim","body_suit":["balanced","broad_shoulders","rectangle"],"season":"winter","price_range":"medium","brand":"Gap","actual_price":"$60","product_url":"https://www.gap.com/","description":"Cool-toned casual everyday essential.","tags":["basics","all-season"],"gender":"unisex"},
+  {"filename":"i7.jpg","style":"formal","occasion":"party","color":"neutral","fit":"slim","body_suit":["balanced","wide_hips","hourglass"],"season":"winter","price_range":"high","brand":"& Other Stories","actual_price":"$150","product_url":"https://www.stories.com/","description":"Statement party look for elegant evening events.","tags":["party","premium","evening"],"gender":"female"},
+  {"filename":"i8.jpg","style":"streetwear","occasion":"daily","color":"warm","fit":"loose","body_suit":["balanced","broad_shoulders","athletic","rectangle"],"season":"summer","price_range":"medium","brand":"Adidas","actual_price":"$75","product_url":"https://www.adidas.com/","description":"Athletic streetwear with warm-season energy.","tags":["sporty","trending"],"gender":"unisex"},
+  {"filename":"i9.jpg","style":"casual","occasion":"party","color":"cool","fit":"slim","body_suit":["wide_hips","balanced","hourglass","pear"],"season":"summer","price_range":"medium","brand":"Mango","actual_price":"$65","product_url":"https://shop.mango.com/","description":"Cool-toned playful look for casual parties.","tags":["party","summer","trendy"],"gender":"female"},
+  {"filename":"i10.jpg","style":"formal","occasion":"office","color":"neutral","fit":"slim","body_suit":["balanced","broad_shoulders","inverted_triangle","rectangle"],"season":"winter","price_range":"high","brand":"Theory","actual_price":"$180","product_url":"https://www.theory.com/","description":"Refined neutral formal piece for any professional setting.","tags":["premium","classic","office"],"gender":"male"}
 ]

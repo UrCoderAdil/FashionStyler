@@ -1,19 +1,20 @@
-import { useState, useCallback } from 'react';
-import './index.css';
+import { useState, useCallback, useEffect } from 'react';
+import './styles/magazine.css';
 
 import UploadSection from './components/UploadSection';
 import LoadingSpinner from './components/LoadingSpinner';
 import AnalysisCard from './components/AnalysisCard';
 import OutfitCard from './components/OutfitCard';
 import PreferencesForm from './components/PreferencesForm';
+import ShareModal from './components/ShareModal';
 
 const ANALYSIS_STEPS = [
-  'Loading your photo...',
-  'Detecting body landmarks...',
-  'Analyzing skin tone...',
-  'Computing visual embeddings...',
-  'Applying preference filters...',
-  'Ranking personalized outfits...',
+  'Analyzing your unique silhouette...',
+  'Determining your seasonal color profile...',
+  'Mapping body landmarks in 3D...',
+  'Scanning aesthetic visual patterns...',
+  'Matching against editorial collections...',
+  'Curating your personalized lookbook...',
 ];
 
 const STATE = { IDLE: 'idle', LOADING: 'loading', RESULTS: 'results', ERROR: 'error' };
@@ -28,6 +29,11 @@ export default function App() {
   const [preferences, setPreferences] = useState({
     style: '', occasion: '', budget: '', color_preference: '',
   });
+  
+  // New states for Try-On and Sharing
+  const [tryOnImage, setTryOnImage] = useState(null);
+  const [isTryOnLoading, setIsTryOnLoading] = useState(false);
+  const [shareData, setShareData] = useState(null);
 
   const handleFileSelect = useCallback((selectedFile) => {
     setFile(selectedFile);
@@ -48,12 +54,11 @@ export default function App() {
         clearInterval(stepInterval);
         return prev;
       });
-    }, 1400);
+    }, 1200);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
-      // Append non-empty preferences as form fields
       Object.entries(preferences).forEach(([k, v]) => {
         if (v) formData.append(k, v);
       });
@@ -73,129 +78,175 @@ export default function App() {
       setAppState(STATE.RESULTS);
     } catch (err) {
       clearInterval(stepInterval);
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || 'Analysis failed. Please try again.');
       setAppState(STATE.ERROR);
+    }
+  };
+
+  const handleTryOn = async (outfitFilename) => {
+    if (!file) return;
+    setIsTryOnLoading(true);
+    setTryOnImage(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('outfit_filename', outfitFilename);
+      
+      const res = await fetch('/api/virtual-tryon', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Try-on failed');
+      
+      const blob = await res.blob();
+      setTryOnImage(URL.createObjectURL(blob));
+    } catch (err) {
+      console.error(err);
+      alert('Virtual try-on unavailable for this image.');
+    } finally {
+      setIsTryOnLoading(false);
+    }
+  };
+
+  const handleShare = async (outfit) => {
+    if (!file || !results) return;
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('outfit_filename', outfit.filename);
+      formData.append('body_type', results.features.body_type);
+      formData.append('color_season', results.features.color_season);
+      formData.append('match_score', outfit.final_score);
+      formData.append('style', outfit.style);
+      formData.append('occasion', outfit.occasion);
+      
+      const res = await fetch('/api/share-card', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Share card failed');
+      
+      const data = await res.json();
+      setShareData(data.share_card);
+    } catch (err) {
+      console.error(err);
+      alert('Could not generate share card.');
     }
   };
 
   const handleReset = () => {
     setFile(null); setPreview(null); setResults(null);
     setError(''); setAppState(STATE.IDLE);
+    setTryOnImage(null); setShareData(null);
   };
 
   return (
-    <div className="relative min-h-screen" style={{ background: 'var(--color-bg)' }}>
-      <div className="orb orb-1" /><div className="orb orb-2" /><div className="orb orb-3" />
+    <div className="magazine-container">
+      {/* HEADER / MASTHEAD */}
+      <header className="masthead">
+        <p className="masthead-date">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} · ISSUE 001</p>
+        <h1 className="masthead-title">STYLE AI</h1>
+        <p className="masthead-subtitle">The Editorial Lookbook</p>
+      </header>
 
-      <div className="relative z-10 flex flex-col items-center px-4 py-10 min-h-screen">
-
-        {/* HEADER */}
-        <header className="text-center mb-10 fade-in">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-4"
-            style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa' }}>
-            🤖 CLIP · MediaPipe · Hybrid AI
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black mb-3 leading-tight">
-            <span className="gradient-text">AI Personal</span><br />
-            <span style={{ color: '#e2e8f0' }}>Stylist</span>
-          </h1>
-          <p className="text-base max-w-md mx-auto" style={{ color: '#64748b' }}>
-            Upload your photo, set your preferences — get outfits made <em>just for you</em>.
-          </p>
-        </header>
-
-        <main className="w-full max-w-5xl">
-
-          {/* IDLE / ERROR */}
-          {(appState === STATE.IDLE || appState === STATE.ERROR) && (
-            <div className="flex flex-col gap-5 fade-in">
-              <div className="glass-card p-6 md:p-8">
+      <main>
+        {/* IDLE / ERROR */}
+        {(appState === STATE.IDLE || appState === STATE.ERROR) && (
+          <div className="flex flex-col gap-10 items-center">
+            <div className="max-w-2xl w-full">
+              <h2 className="section-title italic">Begin Your Session</h2>
+              <div className="polaroid-frame mb-8">
                 <UploadSection onFileSelect={handleFileSelect} preview={preview} />
               </div>
-
+              
               <PreferencesForm preferences={preferences} onChange={setPreferences} />
 
-              {error && (
-                <div className="p-4 rounded-xl text-sm border"
-                  style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.3)', color: '#fca5a5' }}>
-                  ⚠️ {error}
-                </div>
-              )}
-
-              <div className="flex justify-center">
-                <button id="analyze-btn" className="btn-primary text-base px-10 py-3"
-                  disabled={!file} onClick={handleAnalyze}>
-                  ✨ Analyze My Style
+              {error && <p className="text-red-600 mt-4 font-semibold text-center">⚠️ {error}</p>}
+              
+              <div className="mt-10 flex justify-center">
+                <button 
+                  className="btn-editorial text-xl" 
+                  disabled={!file} 
+                  onClick={handleAnalyze}
+                >
+                  Create My Lookbook
                 </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* LOADING */}
-          {appState === STATE.LOADING && (
-            <div className="glass-card p-10 flex flex-col items-center fade-in">
-              <LoadingSpinner steps={ANALYSIS_STEPS} currentStep={loadingStep} />
-              <p className="mt-6 text-sm" style={{ color: '#64748b' }}>
-                First run may take 10–30s while the AI warms up…
-              </p>
-            </div>
-          )}
+        {/* LOADING */}
+        {appState === STATE.LOADING && (
+          <div className="py-20 text-center">
+            <LoadingSpinner steps={ANALYSIS_STEPS} currentStep={loadingStep} />
+          </div>
+        )}
 
-          {/* RESULTS */}
-          {appState === STATE.RESULTS && results && (
-            <div className="flex flex-col gap-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Photo */}
-                <div className="glass-card p-6 flex flex-col items-center gap-4 fade-in">
-                  <h2 className="text-lg font-semibold self-start" style={{ color: '#e2e8f0' }}>📷 Your Photo</h2>
-                  <div className="rounded-2xl overflow-hidden glow-ring" style={{ width: '200px', height: '260px' }}>
-                    <img src={preview} alt="Your photo" className="w-full h-full object-cover" />
-                  </div>
-                  {/* Preferences used */}
-                  {Object.keys(results.preferences_used || {}).length > 0 && (
-                    <div className="self-stretch">
-                      <p className="text-xs font-semibold mb-2" style={{ color: '#64748b' }}>PREFERENCES APPLIED</p>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(results.preferences_used).map(([k, v]) => (
-                          <span key={k} className="text-xs px-2 py-1 rounded-full"
-                            style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.25)' }}>
-                            {k.replace('_', ' ')}: <strong>{v}</strong>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+        {/* RESULTS */}
+        {appState === STATE.RESULTS && results && (
+          <div className="fade-in">
+            <div className="editorial-spread mb-20">
+              {/* PAGE 1: ANALYSIS */}
+              <div className="page page-left">
+                <div className="flex justify-between items-end mb-8 border-b-2 border-black pb-2">
+                  <h2 className="font-display text-4xl m-0">PROFILE</h2>
+                  <p className="m-0 text-sm font-bold tracking-widest uppercase">P. 01</p>
                 </div>
-                {/* Analysis */}
-                <AnalysisCard features={results.features} />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="polaroid-frame h-fit">
+                    <img src={preview} alt="User" className="w-full grayscale-[20%]" />
+                  </div>
+                  <AnalysisCard features={results.features} />
+                </div>
+                
+                {tryOnImage && (
+                  <div className="mt-12 pt-8 border-t border-gray-200">
+                    <h3 className="font-display text-2xl italic mb-4">The Fitting Room</h3>
+                    <div className="bg-gray-100 p-4 border border-gray-200">
+                      <img src={tryOnImage} alt="Try On" className="w-full max-h-[500px] object-contain" />
+                    </div>
+                  </div>
+                )}
+                
+                {isTryOnLoading && (
+                  <div className="mt-12 text-center py-10 bg-gray-50 border border-dashed border-gray-300">
+                    <p className="animate-pulse font-accent italic">Adjusting the garments to your frame...</p>
+                  </div>
+                )}
               </div>
 
-              {/* Recommendations */}
-              <div className="fade-in fade-in-delay-1">
-                <h2 className="text-xl font-bold mb-4 gradient-text">👗 Top Outfit Recommendations</h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {/* PAGE 2: RECOMMENDATIONS */}
+              <div className="page">
+                <div className="flex justify-between items-end mb-8 border-b-2 border-black pb-2">
+                  <h2 className="font-display text-4xl m-0">COLLECTION</h2>
+                  <p className="m-0 text-sm font-bold tracking-widest uppercase">P. 02</p>
+                </div>
+                
+                <div className="columns-1 sm:columns-2 gap-8">
                   {results.recommendations.map((outfit, i) => (
-                    <div key={i} className={`fade-in fade-in-delay-${Math.min(i + 1, 4)}`}>
-                      <OutfitCard outfit={outfit} rank={i} />
-                    </div>
+                    <OutfitCard 
+                      key={i} 
+                      outfit={outfit} 
+                      rank={i} 
+                      onTryOn={() => handleTryOn(outfit.filename)}
+                      onShare={() => handleShare(outfit)}
+                    />
                   ))}
                 </div>
-              </div>
-
-              <div className="flex justify-center fade-in fade-in-delay-4">
-                <button id="reset-btn" className="btn-primary" onClick={handleReset}
-                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: '#e2e8f0' }}>
-                  🔄 Try Another Photo
-                </button>
+                
+                <div className="mt-12 flex justify-center">
+                  <button className="btn-editorial" onClick={handleReset}>New Session</button>
+                </div>
               </div>
             </div>
-          )}
-        </main>
+          </div>
+        )}
+      </main>
 
-        <footer className="mt-16 text-xs" style={{ color: '#334155' }}>
-          AI Personal Stylist v2 · CLIP + MediaPipe · Hybrid Scoring
-        </footer>
-      </div>
+      {shareData && <ShareModal base64={shareData} onClose={() => setShareData(null)} />}
+
+      <footer className="mt-20 py-10 border-t border-black text-center">
+        <p className="font-accent italic text-lg">Fin.</p>
+        <p className="text-xs uppercase tracking-widest font-bold text-gray-500 mt-2">© 2026 Style AI Magazine</p>
+      </footer>
     </div>
   );
 }

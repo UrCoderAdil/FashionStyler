@@ -1,75 +1,95 @@
-import { useRef, useState } from 'react';
-
-const BODY_ICON = '🏋️';
-const SKIN_ICON = '🎨';
-
-const bodyLabels = {
-  broad_shoulders: 'Broad Shoulders',
-  wide_hips: 'Wide Hips',
-  balanced: 'Balanced / Athletic',
-  unknown: 'Unknown',
-};
-
-const skinLabels = {
-  warm: 'Warm Skin Tone',
-  cool: 'Cool Skin Tone',
-  unknown: 'Unknown',
-};
-
-const bodyTips = {
-  broad_shoulders: 'V-neck tops & straight-cut trousers will look great on you!',
-  wide_hips: 'High-waist fits and A-line cuts balance your silhouette perfectly.',
-  balanced: 'Lucky you — almost any silhouette works! Tailored and structured fits are 🔥',
-  unknown: "We couldn't detect a body type — try a clearer full-body photo.",
-};
-
-const skinTips = {
-  warm: 'Earthy tones — beige, terracotta, olive, mustard — are your best friends.',
-  cool: 'Jewel tones — cobalt blue, emerald, deep plum — make your complexion pop.',
-  unknown: "We couldn't detect skin tone — try a photo with better lighting.",
-};
+function Swatch({ hex, label }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="w-full aspect-square border border-gray-200" style={{ backgroundColor: hex }} title={label || hex} />
+      {label && <span className="text-[8px] uppercase tracking-tighter text-gray-400">{label}</span>}
+    </div>
+  );
+}
 
 export default function AnalysisCard({ features }) {
-  const body = features.body_type || 'unknown';
-  const skin = features.skin_tone || 'unknown';
+  const { 
+    body_type = 'unknown', 
+    body_confidence = 0,
+    color_season = 'unknown',
+    color_confidence = 0,
+    color_palette = {},
+    style_tips = {},
+    undertone = 'unknown',
+    color_value = 'unknown',
+    color_chroma = 'unknown'
+  } = features;
+
+  const seasonName = color_season.replace('_', ' ');
 
   return (
-    <div className="glass-card p-6 fade-in">
-      <h2 className="text-lg font-semibold mb-5" style={{ color: '#e2e8f0' }}>
-        ✨ Your Style Profile
-      </h2>
-      <div className="flex flex-wrap gap-3 mb-5">
-        <span className="feature-badge">
-          <span>{BODY_ICON}</span>
-          <span>{bodyLabels[body] || body}</span>
-        </span>
-        <span
-          className="feature-badge"
-          style={{
-            background: 'rgba(236,72,153,0.1)',
-            borderColor: 'rgba(236,72,153,0.3)',
-          }}
-        >
-          <span>{SKIN_ICON}</span>
-          <span>{skinLabels[skin] || skin}</span>
-        </span>
-      </div>
-      <div className="flex flex-col gap-3">
-        <div
-          className="rounded-xl p-4 text-sm leading-relaxed"
-          style={{ background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.15)' }}
-        >
-          <span className="font-semibold" style={{ color: '#a78bfa' }}>Body Type Tip: </span>
-          {bodyTips[body]}
+    <div className="flex flex-col gap-6 font-body">
+      {/* BODY TYPE */}
+      <section>
+        <div className="flex justify-between items-baseline mb-2">
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Body Architecture</label>
+          <span className="text-[10px] text-gray-400">Confidence: {(body_confidence * 100).toFixed(0)}%</span>
         </div>
-        <div
-          className="rounded-xl p-4 text-sm leading-relaxed"
-          style={{ background: 'rgba(236,72,153,0.07)', border: '1px solid rgba(236,72,153,0.15)' }}
-        >
-          <span className="font-semibold" style={{ color: '#f472b6' }}>Skin Tone Tip: </span>
-          {skinTips[skin]}
+        <h3 className="font-accent text-3xl capitalize italic mb-2">{body_type.replace('_', ' ')}</h3>
+        <p className="text-sm text-gray-700 leading-relaxed mb-4">{style_tips.description}</p>
+        
+        <div className="grid grid-cols-1 gap-2">
+          <div className="bg-gray-50 p-3 border border-gray-100">
+            <h4 className="text-[10px] font-bold uppercase mb-2 text-black">Editorial Tips</h4>
+            <ul className="text-xs space-y-1 list-disc pl-4 text-gray-600">
+              {style_tips.recommended?.map((tip, i) => (
+                <li key={i}><strong className="text-gray-900">Do:</strong> {tip}</li>
+              ))}
+              {style_tips.avoid?.map((tip, i) => (
+                <li key={i}><span className="text-gray-400 italic">Avoid {tip}</span></li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* COLOR SEASON */}
+      <section className="pt-6 border-t border-gray-100">
+        <div className="flex justify-between items-baseline mb-2">
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Chromatic Season</label>
+          <span className="text-[10px] text-gray-400">Match: {(color_confidence * 100).toFixed(0)}%</span>
+        </div>
+        <h3 className="font-accent text-3xl capitalize italic mb-2">{seasonName}</h3>
+        
+        <div className="flex gap-4 text-[10px] uppercase font-bold text-gray-400 mb-4">
+          <span>{undertone} Undertone</span>
+          <span>•</span>
+          <span>{color_value} Value</span>
+          <span>•</span>
+          <span>{color_chroma} Chroma</span>
+        </div>
+
+        <p className="text-xs text-gray-600 italic mb-4">{color_palette.description}</p>
+
+        {/* SWATCHES */}
+        {color_palette.best_colors && (
+          <div>
+            <h4 className="text-[10px] font-bold uppercase mb-2 text-black">Best Palette Swatches</h4>
+            <div className="grid grid-cols-6 gap-2">
+              {color_palette.best_colors.map((hex, i) => (
+                <Swatch key={i} hex={hex} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* METALS / MAKEUP */}
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-[10px] font-bold uppercase mb-1 text-black">Best Metals</h4>
+            <p className="text-[10px] text-gray-600 capitalize">{color_palette.metals?.join(', ')}</p>
+          </div>
+          <div>
+            <h4 className="text-[10px] font-bold uppercase mb-1 text-black">Beauty Pulse</h4>
+            <p className="text-[10px] text-gray-600">{color_palette.makeup_tips}</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

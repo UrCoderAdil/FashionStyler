@@ -4,105 +4,96 @@ function ScoreBar({ label, value, color }) {
   const pct = Math.min(1, Math.max(0, value)) * 100;
   return (
     <div>
-      <div className="flex justify-between text-xs mb-1" style={{ color: '#94a3b8' }}>
+      <div className="flex justify-between text-[8px] uppercase font-bold mb-1" style={{ color: '#999' }}>
         <span>{label}</span>
-        <span style={{ color }}>{(value * 100).toFixed(1)}%</span>
+        <span>{(value * 100).toFixed(0)}%</span>
       </div>
-      <div className="score-bar-track">
-        <div className="score-bar-fill" style={{ width: `${pct}%` }} />
+      <div className="h-[2px] w-full bg-gray-100">
+        <div className="h-full bg-black transition-all duration-1000" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
     </div>
   );
 }
 
-const TAG_COLORS = {
-  casual:     '#8b5cf6',
-  formal:     '#06b6d4',
-  streetwear: '#ec4899',
-  warm:       '#f59e0b',
-  cool:       '#3b82f6',
-  neutral:    '#64748b',
-  low:        '#22c55e',
-  medium:     '#f59e0b',
-  high:       '#ef4444',
-};
-
-function Tag({ value }) {
-  const color = TAG_COLORS[value] ?? '#64748b';
-  return (
-    <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-      style={{ background: `${color}22`, color, border: `1px solid ${color}44` }}>
-      {value}
-    </span>
-  );
-}
-
-export default function OutfitCard({ outfit, rank }) {
+export default function OutfitCard({ outfit, rank, onTryOn, onShare }) {
+  const [showDetails, setShowDetails] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [showExplanation, setShowExplanation] = useState(false);
 
-  const medal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : `#${rank + 1}`;
   const scores = outfit.scores || {};
 
   return (
-    <div className="outfit-card flex flex-col">
-      {/* Image */}
-      <div className="relative overflow-hidden flex-shrink-0" style={{ height: '220px', background: 'rgba(255,255,255,0.03)' }}>
+    <div className="outfit-card-magazine mb-8">
+      <div className="card-image-wrap group">
+        <div className="absolute top-2 left-2 z-10 w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-accent italic text-sm">
+          {rank + 1}
+        </div>
+        
         {!imgError ? (
-          <img src={outfit.image_url} alt={`Outfit ${rank + 1}`}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-            onError={() => setImgError(true)} />
+          <img 
+            src={outfit.image_url} 
+            alt={`Look ${rank + 1}`} 
+            className="w-full grayscale-[10%] group-hover:grayscale-0 transition-all duration-500"
+            onError={() => setImgError(true)}
+          />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ color: '#64748b' }}>
+          <div className="aspect-[3/4] bg-gray-50 flex items-center justify-center text-gray-300">
             <span className="text-4xl">👗</span>
-            <span className="text-xs">Image unavailable</span>
           </div>
         )}
-        {/* Rank */}
-        <div className="absolute top-2 left-2 text-base px-2 py-0.5 rounded-lg"
-          style={{ background: 'rgba(10,10,20,0.85)', backdropFilter: 'blur(8px)' }}>
-          {medal}
-        </div>
-        {/* Final score chip */}
-        <div className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-lg"
-          style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', color: 'white' }}>
-          {(outfit.final_score * 100).toFixed(1)}%
-        </div>
+
+        <button className="try-on-btn" onClick={onTryOn}>Virtual Try-On</button>
       </div>
 
-      {/* Body */}
-      <div className="p-3 flex flex-col gap-3 flex-grow">
-        {/* Metadata tags */}
-        <div className="flex flex-wrap gap-1">
-          {[outfit.style, outfit.color, outfit.fit, outfit.price_range].filter(Boolean).map((v) => (
-            <Tag key={v} value={v} />
-          ))}
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-1">
+          <h4 className="font-accent text-xl italic capitalize">{outfit.style} Ensemble</h4>
+          <span className="text-[10px] font-bold text-red-600">{(outfit.final_score * 100).toFixed(0)}% MATCH</span>
         </div>
+        
+        <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-3">
+          {outfit.brand || 'Designer'} · {outfit.actual_price || outfit.price_range}
+        </p>
 
-        {/* Score bars */}
-        <div className="flex flex-col gap-1.5">
-          <ScoreBar label="Visual Match"  value={scores.clip_similarity ?? 0} color="#a78bfa" />
-          <ScoreBar label="Body Fit"      value={scores.body_match      ?? 0} color="#34d399" />
-          <ScoreBar label="Skin Tone"     value={scores.skin_tone_match ?? 0} color="#f472b6" />
-          <ScoreBar label="Your Style"    value={scores.pref_match      ?? 0} color="#facc15" />
-        </div>
+        <p className="text-xs text-gray-600 leading-relaxed italic mb-4">
+          "{outfit.description || outfit.explanation.split('\n')[0].replace('Recommended because:', '').trim()}"
+        </p>
 
-        {/* Explanation toggle */}
-        {outfit.explanation && (
-          <div>
-            <button
-              className="text-xs font-medium flex items-center gap-1 transition-colors duration-200"
-              style={{ color: showExplanation ? '#a78bfa' : '#475569' }}
-              onClick={() => setShowExplanation((v) => !v)}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {outfit.product_url && (
+            <a 
+              href={outfit.product_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-[10px] font-bold uppercase tracking-widest border-b border-black pb-0.5 hover:text-red-700 hover:border-red-700 transition-colors"
             >
-              {showExplanation ? '▾' : '▸'} Why this outfit?
-            </button>
-            {showExplanation && (
-              <div className="mt-2 text-xs leading-relaxed rounded-lg p-3 whitespace-pre-line"
-                style={{ background: 'rgba(139,92,246,0.07)', color: '#94a3b8', border: '1px solid rgba(139,92,246,0.15)' }}>
-                {outfit.explanation}
-              </div>
-            )}
+              Shop the Look
+            </a>
+          )}
+          <button 
+            onClick={onShare}
+            className="text-[10px] font-bold uppercase tracking-widest border-b border-black pb-0.5 hover:text-red-700 hover:border-red-700 transition-colors"
+          >
+            Share Style
+          </button>
+        </div>
+
+        <button 
+          onClick={() => setShowDetails(!showDetails)}
+          className="w-full text-center text-[9px] uppercase font-bold tracking-widest text-gray-400 py-1 hover:text-black transition-colors"
+        >
+          {showDetails ? 'Hide Technical Data' : 'View Technical Data'}
+        </button>
+
+        {showDetails && (
+          <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3 fade-in">
+            <ScoreBar label="Visual Similarity" value={scores.clip_similarity} color="#000" />
+            <ScoreBar label="Body Fit" value={scores.body_match} color="#C41E3A" />
+            <ScoreBar label="Color Harmony" value={scores.skin_tone_match} color="#D4AF37" />
+            <ScoreBar label="Preference Alignment" value={scores.pref_match} color="#666" />
+            
+            <div className="mt-2 text-[10px] text-gray-500 leading-tight">
+              {outfit.explanation}
+            </div>
           </div>
         )}
       </div>
