@@ -14,8 +14,8 @@ export default function UploadSection({ onFileSelect, preview }) {
   return (
     <div
       id="upload-zone"
-      className={`upload-zone flex flex-col items-center justify-center gap-5 p-10 transition-all duration-300 ${dragOver ? 'drag-over' : ''}`}
-      style={{ minHeight: '280px' }}
+      className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
+      style={{ minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.25rem', padding: '2.5rem' }}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
@@ -26,59 +26,76 @@ export default function UploadSection({ onFileSelect, preview }) {
         id="file-input"
         type="file"
         accept="image/*"
-        className="hidden"
+        style={{ display: 'none' }}
         onChange={(e) => handleFiles(e.target.files)}
       />
 
       {preview ? (
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="rounded-2xl overflow-hidden glow-ring"
-            style={{ width: '180px', height: '240px' }}
-          >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          <div style={{
+            width: '180px', height: '240px',
+            overflow: 'hidden',
+            boxShadow: 'var(--shadow-card)',
+            border: '1px solid var(--c-border)',
+            borderRadius: 'var(--r-sm)',
+          }}>
             <img
               src={preview}
               alt="Your uploaded photo"
-              className="w-full h-full object-cover"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
           </div>
-          <p className="text-sm" style={{ color: '#94a3b8' }}>
-            Click or drop to change photo
+          <p style={{ fontSize: '0.75rem', color: 'var(--c-muted)', letterSpacing: '0.05em' }}>
+            Click or drop to replace photo
           </p>
         </div>
       ) : (
         <>
           {/* Upload icon */}
-          <div
-            className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
-            style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}
-          >
-            📸
+          <div style={{
+            width: '64px', height: '64px',
+            background: 'var(--c-cream)',
+            border: '1px solid var(--c-border)',
+            borderRadius: 'var(--r-md)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.75rem',
+          }}>
+            📷
           </div>
-          <div className="text-center">
-            <p className="text-lg font-semibold" style={{ color: '#e2e8f0' }}>
-              Upload your photo
+
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontFamily: 'var(--f-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--c-black)', marginBottom: '0.25rem' }}>
+              Upload Your Photo
             </p>
-            <p className="text-sm mt-1" style={{ color: '#64748b' }}>
-              Drag & drop or click to browse
-            </p>
-            <p className="text-xs mt-2" style={{ color: '#475569' }}>
-              JPG, PNG, WEBP supported
+            <p style={{ fontSize: '0.8rem', color: 'var(--c-muted)' }}>
+              Drag &amp; drop or click to browse
             </p>
           </div>
 
-          {/* Tips */}
-          <div className="flex flex-wrap justify-center gap-2 max-w-sm">
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
             {['Full body shot', 'Good lighting', 'Clear background'].map((tip) => (
               <span
                 key={tip}
-                className="text-xs px-3 py-1 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)' }}
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  padding: '0.3rem 0.75rem',
+                  background: 'var(--c-cream)',
+                  border: '1px solid var(--c-border)',
+                  borderRadius: 'var(--r-pill)',
+                  color: 'var(--c-charcoal)',
+                }}
               >
                 ✓ {tip}
               </span>
             ))}
           </div>
+
+          <p style={{ fontSize: '0.65rem', color: 'var(--c-border-dark)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            JPG · PNG · WEBP
+          </p>
         </>
       )}
     </div>

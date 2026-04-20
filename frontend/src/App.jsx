@@ -1,39 +1,35 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import './styles/magazine.css';
 
-import UploadSection from './components/UploadSection';
-import LoadingSpinner from './components/LoadingSpinner';
-import AnalysisCard from './components/AnalysisCard';
-import OutfitCard from './components/OutfitCard';
-import PreferencesForm from './components/PreferencesForm';
-import ShareModal from './components/ShareModal';
+import UploadSection    from './components/UploadSection';
+import LoadingSpinner   from './components/LoadingSpinner';
+import AnalysisCard     from './components/AnalysisCard';
+import OutfitCard       from './components/OutfitCard';
+import PreferencesForm  from './components/PreferencesForm';
+import ShareModal       from './components/ShareModal';
 
 const ANALYSIS_STEPS = [
-  'Analyzing your unique silhouette...',
-  'Determining your seasonal color profile...',
-  'Mapping body landmarks in 3D...',
-  'Scanning aesthetic visual patterns...',
-  'Matching against editorial collections...',
-  'Curating your personalized lookbook...',
+  'Analyzing your unique silhouette…',
+  'Determining your seasonal color profile…',
+  'Mapping body landmarks in 3D…',
+  'Scanning aesthetic visual patterns…',
+  'Matching against editorial collections…',
+  'Curating your personalized lookbook…',
 ];
 
 const STATE = { IDLE: 'idle', LOADING: 'loading', RESULTS: 'results', ERROR: 'error' };
 
 export default function App() {
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [appState, setAppState] = useState(STATE.IDLE);
+  const [file, setFile]             = useState(null);
+  const [preview, setPreview]       = useState(null);
+  const [appState, setAppState]     = useState(STATE.IDLE);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [results, setResults] = useState(null);
-  const [error, setError] = useState('');
-  const [preferences, setPreferences] = useState({
-    style: '', occasion: '', budget: '', color_preference: '',
-  });
-  
-  // New states for Try-On and Sharing
+  const [results, setResults]       = useState(null);
+  const [error, setError]           = useState('');
+  const [preferences, setPreferences] = useState({ style: '', occasion: '', budget: '', color_preference: '' });
   const [tryOnImage, setTryOnImage] = useState(null);
   const [isTryOnLoading, setIsTryOnLoading] = useState(false);
-  const [shareData, setShareData] = useState(null);
+  const [shareData, setShareData]   = useState(null);
 
   const handleFileSelect = useCallback((selectedFile) => {
     setFile(selectedFile);
@@ -59,9 +55,7 @@ export default function App() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      Object.entries(preferences).forEach(([k, v]) => {
-        if (v) formData.append(k, v);
-      });
+      Object.entries(preferences).forEach(([k, v]) => { if (v) formData.append(k, v); });
 
       const res = await fetch('/api/analyze', { method: 'POST', body: formData });
       clearInterval(stepInterval);
@@ -87,15 +81,12 @@ export default function App() {
     if (!file) return;
     setIsTryOnLoading(true);
     setTryOnImage(null);
-    
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('outfit_filename', outfitFilename);
-      
       const res = await fetch('/api/virtual-tryon', { method: 'POST', body: formData });
       if (!res.ok) throw new Error('Try-on failed');
-      
       const blob = await res.blob();
       setTryOnImage(URL.createObjectURL(blob));
     } catch (err) {
@@ -108,7 +99,6 @@ export default function App() {
 
   const handleShare = async (outfit) => {
     if (!file || !results) return;
-    
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -118,10 +108,8 @@ export default function App() {
       formData.append('match_score', outfit.final_score);
       formData.append('style', outfit.style);
       formData.append('occasion', outfit.occasion);
-      
       const res = await fetch('/api/share-card', { method: 'POST', body: formData });
       if (!res.ok) throw new Error('Share card failed');
-      
       const data = await res.json();
       setShareData(data.share_card);
     } catch (err) {
@@ -138,102 +126,160 @@ export default function App() {
 
   return (
     <div className="magazine-container">
-      {/* HEADER / MASTHEAD */}
+
+      {/* ── MASTHEAD ─────────────────────────────────── */}
       <header className="masthead">
-        <p className="masthead-date">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} · ISSUE 001</p>
+        <p className="masthead-date">
+          {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} &nbsp;·&nbsp; Issue 001
+        </p>
         <h1 className="masthead-title">STYLE AI</h1>
         <p className="masthead-subtitle">The Editorial Lookbook</p>
       </header>
 
       <main>
-        {/* IDLE / ERROR */}
+
+        {/* ── IDLE / ERROR ─────────────────────────── */}
         {(appState === STATE.IDLE || appState === STATE.ERROR) && (
-          <div className="flex flex-col gap-10 items-center">
-            <div className="max-w-2xl w-full">
-              <h2 className="section-title italic">Begin Your Session</h2>
-              <div className="polaroid-frame mb-8">
+          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+            <div style={{ maxWidth: '640px', width: '100%' }}>
+
+              {/* Section label */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ flex: 1, height: '1px', background: 'var(--c-border)' }} />
+                <h2 style={{ fontFamily: 'var(--f-display)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.25em', color: 'var(--c-muted)', whiteSpace: 'nowrap' }}>
+                  Begin Your Session
+                </h2>
+                <div style={{ flex: 1, height: '1px', background: 'var(--c-border)' }} />
+              </div>
+
+              {/* Upload */}
+              <div className="polaroid-frame" style={{ marginBottom: '2rem' }}>
                 <UploadSection onFileSelect={handleFileSelect} preview={preview} />
               </div>
-              
+
+              {/* Preferences */}
               <PreferencesForm preferences={preferences} onChange={setPreferences} />
 
-              {error && <p className="text-red-600 mt-4 font-semibold text-center">⚠️ {error}</p>}
-              
-              <div className="mt-10 flex justify-center">
-                <button 
-                  className="btn-editorial text-xl" 
-                  disabled={!file} 
+              {/* Error banner */}
+              {error && (
+                <div className="error-banner fade-in" style={{ marginTop: '1.25rem' }}>
+                  <span style={{ fontSize: '1rem' }}>⚠</span>
+                  {error}
+                </div>
+              )}
+
+              {/* CTA */}
+              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
+                <button
+                  className="btn-editorial"
+                  style={{ fontSize: '0.8rem', padding: '1rem 3rem', minWidth: '220px' }}
+                  disabled={!file}
                   onClick={handleAnalyze}
                 >
                   Create My Lookbook
                 </button>
               </div>
+
+              {/* Hint text */}
+              {!file && (
+                <p style={{ textAlign: 'center', marginTop: '0.75rem', fontSize: '0.65rem', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Upload a photo to continue
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {/* LOADING */}
+        {/* ── LOADING ──────────────────────────────── */}
         {appState === STATE.LOADING && (
-          <div className="py-20 text-center">
+          <div style={{ padding: '5rem 0', textAlign: 'center' }}>
             <LoadingSpinner steps={ANALYSIS_STEPS} currentStep={loadingStep} />
           </div>
         )}
 
-        {/* RESULTS */}
+        {/* ── RESULTS ──────────────────────────────── */}
         {appState === STATE.RESULTS && results && (
           <div className="fade-in">
-            <div className="editorial-spread mb-20">
-              {/* PAGE 1: ANALYSIS */}
-              <div className="page page-left">
-                <div className="flex justify-between items-end mb-8 border-b-2 border-black pb-2">
-                  <h2 className="font-display text-4xl m-0">PROFILE</h2>
-                  <p className="m-0 text-sm font-bold tracking-widest uppercase">P. 01</p>
+
+            {/* Back / session info strip */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', paddingBottom: '0.875rem', borderBottom: '1px solid var(--c-border)' }}>
+              <button
+                onClick={handleReset}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: '0.375rem', transition: 'color 0.15s' }}
+                onMouseOver={e => e.currentTarget.style.color = 'var(--c-black)'}
+                onMouseOut={e => e.currentTarget.style.color = 'var(--c-muted)'}
+              >
+                ← New Session
+              </button>
+              <span style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--c-muted)' }}>
+                {results.recommendations?.length ?? 0} looks curated
+              </span>
+            </div>
+
+            {/* Two-page spread */}
+            <div className="editorial-spread">
+
+              {/* PAGE 1 — PROFILE */}
+              <div className="page page-left fade-in-delay-1">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem', paddingBottom: '0.625rem', borderBottom: '2px solid var(--c-black)' }}>
+                  <h2 style={{ fontFamily: 'var(--f-display)', fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>
+                    PROFILE
+                  </h2>
+                  <span className="page-number">P. 01</span>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="polaroid-frame h-fit">
-                    <img src={preview} alt="User" className="w-full grayscale-[20%]" />
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.4fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                  <div className="polaroid-frame" style={{ alignSelf: 'start' }}>
+                    <img src={preview} alt="Your photo" style={{ width: '100%', display: 'block' }} />
                   </div>
                   <AnalysisCard features={results.features} />
                 </div>
-                
+
+                {/* Fitting Room */}
                 {tryOnImage && (
-                  <div className="mt-12 pt-8 border-t border-gray-200">
-                    <h3 className="font-display text-2xl italic mb-4">The Fitting Room</h3>
-                    <div className="bg-gray-100 p-4 border border-gray-200">
-                      <img src={tryOnImage} alt="Try On" className="w-full max-h-[500px] object-contain" />
-                    </div>
+                  <div className="fitting-room fade-in">
+                    <p style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--c-muted)', marginBottom: '0.75rem' }}>
+                      The Fitting Room
+                    </p>
+                    <img src={tryOnImage} alt="Virtual Try-On" style={{ width: '100%', display: 'block', maxHeight: '480px', objectFit: 'contain' }} />
                   </div>
                 )}
-                
+
                 {isTryOnLoading && (
-                  <div className="mt-12 text-center py-10 bg-gray-50 border border-dashed border-gray-300">
-                    <p className="animate-pulse font-accent italic">Adjusting the garments to your frame...</p>
+                  <div className="fitting-room-loading fade-in">
+                    <span style={{ fontSize: '1.25rem' }}>👗</span>
+                    <p style={{ fontFamily: 'var(--f-accent)', fontStyle: 'italic', fontSize: '0.95rem', color: 'var(--c-charcoal)' }}>
+                      Adjusting the garments to your frame…
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* PAGE 2: RECOMMENDATIONS */}
-              <div className="page">
-                <div className="flex justify-between items-end mb-8 border-b-2 border-black pb-2">
-                  <h2 className="font-display text-4xl m-0">COLLECTION</h2>
-                  <p className="m-0 text-sm font-bold tracking-widest uppercase">P. 02</p>
+              {/* PAGE 2 — COLLECTION */}
+              <div className="page fade-in-delay-2">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem', paddingBottom: '0.625rem', borderBottom: '2px solid var(--c-black)' }}>
+                  <h2 style={{ fontFamily: 'var(--f-display)', fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>
+                    COLLECTION
+                  </h2>
+                  <span className="page-number">P. 02</span>
                 </div>
-                
-                <div className="columns-1 sm:columns-2 gap-8">
+
+                <div style={{ columns: '1', gap: '0' }}>
                   {results.recommendations.map((outfit, i) => (
-                    <OutfitCard 
-                      key={i} 
-                      outfit={outfit} 
-                      rank={i} 
+                    <OutfitCard
+                      key={i}
+                      outfit={outfit}
+                      rank={i}
                       onTryOn={() => handleTryOn(outfit.filename)}
                       onShare={() => handleShare(outfit)}
                     />
                   ))}
                 </div>
-                
-                <div className="mt-12 flex justify-center">
-                  <button className="btn-editorial" onClick={handleReset}>New Session</button>
+
+                <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <button className="btn-editorial" style={{ fontSize: '0.7rem' }} onClick={handleReset}>
+                    Start New Session
+                  </button>
                 </div>
               </div>
             </div>
@@ -241,12 +287,19 @@ export default function App() {
         )}
       </main>
 
+      {/* ── SHARE MODAL ─────────────────────────────── */}
       {shareData && <ShareModal base64={shareData} onClose={() => setShareData(null)} />}
 
-      <footer className="mt-20 py-10 border-t border-black text-center">
-        <p className="font-accent italic text-lg">Fin.</p>
-        <p className="text-xs uppercase tracking-widest font-bold text-gray-500 mt-2">© 2026 Style AI Magazine</p>
+      {/* ── FOOTER ──────────────────────────────────── */}
+      <footer style={{ marginTop: '5rem', paddingTop: '2rem', borderTop: '1px solid var(--c-black)', textAlign: 'center' }}>
+        <p style={{ fontFamily: 'var(--f-accent)', fontStyle: 'italic', fontSize: '1.25rem', color: 'var(--c-black)', marginBottom: '0.5rem' }}>
+          Fin.
+        </p>
+        <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--c-muted)' }}>
+          © {new Date().getFullYear()} Style AI Magazine · All looks curated by artificial intelligence
+        </p>
       </footer>
+
     </div>
   );
 }

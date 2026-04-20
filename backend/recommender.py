@@ -82,8 +82,14 @@ def filter_outfits(dataset: list[dict], user_preferences: dict) -> list[dict]:
 # Step 2 — Scores
 # ---------------------------------------------------------------------------
 def compute_similarity(user_emb: torch.Tensor, outfit_emb: torch.Tensor) -> float:
-    return float((user_emb @ outfit_emb.T).item())
 
+    device = outfit_emb.device
+    user_emb = user_emb.to(device)
+    
+    user_emb = user_emb.float()
+    outfit_emb = outfit_emb.float()
+    
+    return float((user_emb @ outfit_emb.T).item())
 
 def compute_body_match(features: dict, outfit: dict) -> float:
     body_type  = features.get("body_type", "unknown")
