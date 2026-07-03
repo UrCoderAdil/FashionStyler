@@ -10,6 +10,8 @@ Endpoints:
 import os, sys, shutil, tempfile
 from contextlib import asynccontextmanager
 from typing import Annotated
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,18 +33,25 @@ from recommender import recommend
 # Startup — preload dataset + embeddings
 # ---------------------------------------------------------------------------
 outfit_dataset: list[dict] = []
+executor = ThreadPoolExecutor(max_workers=1)
+
+def _background_load(data_dir: str):
+    global outfit_dataset
+    try:
+        logger.info("Loading outfit dataset in background…")
+        outfits = load_dataset(data_dir)
+        logger.info(f"Loaded {len(outfits)} items. Computing embeddings...")
+        outfit_dataset = compute_embeddings(outfits)
+        logger.info(f"Ready — {len(outfit_dataset)} outfits indexed.")
+    except Exception as e:
+        logger.error(f"Failed to load outfit dataset: {e}", exc_info=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global outfit_dataset
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-    logger.info("Loading outfit dataset…")
-    try:
-        outfits = load_dataset(data_dir)
-        outfit_dataset = compute_embeddings(outfits)
-        logger.info(f"Ready — {len(outfit_dataset)} outfits indexed.")
-    except Exception as e:
-        logger.error(f"Failed to load outfit dataset: {e}", exc_info=True)
+    # Run in background to prevent Railway health check timeout (60s)
+    asyncio.get_event_loop().run_in_executor(executor, _background_load, data_dir)
     yield
     outfit_dataset = []
 
