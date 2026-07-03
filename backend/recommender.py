@@ -12,10 +12,10 @@ from embedder import get_image_embedding, batch_similarities
 from utils import normalize_score, budget_to_price_range, skin_tone_to_colors, body_type_to_fits
 
 WEIGHTS = {
-    "clip_similarity": 0.50,
-    "body_match":      0.20,
-    "skin_tone_match": 0.10,
-    "user_preference": 0.20,
+    "clip_similarity": 0.40,
+    "body_match":      0.25,
+    "skin_tone_match": 0.20,
+    "user_preference": 0.15,
 }
 
 # Season → color family mapping
@@ -57,25 +57,9 @@ BODY_COMPAT = {
 # Step 1 — Filter
 # ---------------------------------------------------------------------------
 def filter_outfits(dataset: list[dict], user_preferences: dict) -> list[dict]:
-    prefs = user_preferences or {}
-    occasion       = prefs.get("occasion", "").strip().lower()
-    budget         = prefs.get("budget", "").strip().lower()
-    style          = prefs.get("style", "").strip().lower()
-    allowed_prices = budget_to_price_range(budget) if budget else None
-
-    filtered = [
-        o for o in dataset
-        if (not occasion or o.get("occasion") == occasion)
-        and (not allowed_prices or o.get("price_range") in allowed_prices)
-        and (not style or o.get("style") == style)
-    ]
-
-    if len(filtered) < 3:
-        print(f"[Recommender] Filters too strict ({len(filtered)}); using full dataset.")
-        return dataset
-
-    print(f"[Recommender] {len(filtered)}/{len(dataset)} outfits passed filters.")
-    return filtered
+    # We now use soft penalties via compute_preference_match instead of hard filters
+    # to ensure high-accuracy visual/body matches aren't incorrectly dropped.
+    return dataset
 
 
 # ---------------------------------------------------------------------------

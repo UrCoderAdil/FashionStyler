@@ -15,6 +15,10 @@ from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+import logging
+
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(asctime)s - %(message)s")
+logger = logging.getLogger("AIStylist")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -32,10 +36,13 @@ outfit_dataset: list[dict] = []
 async def lifespan(app: FastAPI):
     global outfit_dataset
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-    print("[Server] Loading outfit dataset …")
-    outfits = load_dataset(data_dir)
-    outfit_dataset = compute_embeddings(outfits)
-    print(f"[Server] Ready — {len(outfit_dataset)} outfits indexed.")
+    logger.info("Loading outfit dataset…")
+    try:
+        outfits = load_dataset(data_dir)
+        outfit_dataset = compute_embeddings(outfits)
+        logger.info(f"Ready — {len(outfit_dataset)} outfits indexed.")
+    except Exception as e:
+        logger.error(f"Failed to load outfit dataset: {e}", exc_info=True)
     yield
     outfit_dataset = []
 
@@ -78,20 +85,30 @@ async def analyze(
 ):
     """Analyze photo → body type + color season + outfit recommendations."""
     if not file.content_type.startswith("image/"):
+        logger.warning(f"Invalid file type uploaded: {file.content_type}")
         raise HTTPException(400, "Uploaded file must be an image.")
     if not outfit_dataset:
+        logger.error("Analyze called but dataset is not loaded.")
         raise HTTPException(503, "Dataset still loading — retry shortly.")
 
     tmp_path = _save_upload(file)
     try:
-        features = extract_features(tmp_path)
+        try:
+            features = extract_features(tmp_path)
+        except Exception as e:
+            logger.error(f"Feature extraction failed: {e}", exc_info=True)
+            raise HTTPException(500, "Failed to analyze image features. Please try another photo.")
 
         prefs = {k: v.strip().lower() for k, v in {
             "style": style, "occasion": occasion,
             "budget": budget, "color_preference": color_preference,
         }.items() if v.strip()}
 
-        results = recommend(tmp_path, features, outfit_dataset, prefs, top_n=5)
+        try:
+            results = recommend(tmp_path, features, outfit_dataset, prefs, top_n=5)
+        except Exception as e:
+            logger.error(f"Recommendation engine failed: {e}", exc_info=True)
+            raise HTTPException(500, "Failed to generate recommendations.")
 
         recommendations = [{
             "filename":    r["filename"],
@@ -142,6 +159,7 @@ async def virtual_tryon(
         return FileResponse(result_path, media_type="image/png",
                             filename=f"tryon_{outfit_filename}.png")
     except Exception as e:
+        logger.error(f"Try-on generation failed for {outfit_filename}: {e}", exc_info=True)
         raise HTTPException(500, f"Try-on generation failed: {e}")
     finally:
         os.unlink(user_path)
@@ -177,6 +195,7 @@ async def share_card(
         )
         return {"share_card": card_b64}
     except Exception as e:
+        logger.error(f"Share card generation failed: {e}", exc_info=True)
         raise HTTPException(500, f"Share card generation failed: {e}")
     finally:
         os.unlink(user_path)

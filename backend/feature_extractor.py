@@ -5,6 +5,9 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import os
+import logging
+
+logger = logging.getLogger("AIStylist.Extractor")
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -87,10 +90,19 @@ def get_body_type(image_rgb: np.ndarray) -> dict:
     Returns:
         body_type (str), confidence (float), measurements (dict), style_tips (dict)
     """
-    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
-    result = _pose_detector.detect(mp_image)
+    try:
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
+        result = _pose_detector.detect(mp_image)
 
-    if not result.pose_landmarks:
+        if not result.pose_landmarks:
+            return {
+                "body_type": "unknown",
+                "confidence": 0.0,
+                "measurements": {},
+                "style_tips": BODY_TYPE_GUIDE["unknown"],
+            }
+    except Exception as e:
+        logger.error(f"MediaPipe Pose execution failed: {e}", exc_info=True)
         return {
             "body_type": "unknown",
             "confidence": 0.0,
@@ -146,34 +158,34 @@ def get_body_type(image_rgb: np.ndarray) -> dict:
 
 def _classify_body(shr: float, elbow_ratio: float, torso_h: float, shoulder_w: float) -> tuple[str, float]:
     """Map ratio values to 8 body types."""
-    if shr > 1.25:
+    if shr > 1.22:
         # Very broad shoulders vs hips
-        if elbow_ratio > 0.85:
+        if elbow_ratio > 0.82:
             return "athletic", 0.82
         return "inverted_triangle", 0.85
 
-    elif shr > 1.10:
+    elif shr > 1.08:
         return "athletic", 0.75
 
-    elif shr < 0.80:
+    elif shr < 0.82:
         return "pear", 0.85
 
-    elif 0.80 <= shr < 0.92:
+    elif 0.82 <= shr < 0.95:
         return "hourglass", 0.75  # hips slightly wider + balanced
 
-    elif 0.92 <= shr <= 1.10:
+    elif 0.95 <= shr <= 1.08:
         # Balanced — differentiate by elbow (midsection estimate)
-        if elbow_ratio > 0.90:
+        if elbow_ratio > 0.88:
             return "oval", 0.68
-        elif elbow_ratio > 0.80:
+        elif elbow_ratio > 0.78:
             return "apple", 0.72
-        elif elbow_ratio < 0.60:
+        elif elbow_ratio < 0.62:
             return "diamond", 0.68
         else:
             return "rectangle", 0.78
 
     else:
-        return "balanced", 0.65  # fallback
+        return "rectangle", 0.65  # fallback — most neutral silhouette
 
 
 # ---------- SKIN TONE (uses color_analysis module) ----------
@@ -184,8 +196,16 @@ def get_skin_tone_and_season(image_rgb: np.ndarray) -> dict:
     """
     from color_analysis import analyze_seasonal_color_type
 
-    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
-    result = _face_detector.detect(mp_image)
+    try:
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
+        result = _face_detector.detect(mp_image)
+    except Exception as e:
+        logger.error(f"MediaPipe Face execution failed: {e}", exc_info=True)
+        return {
+            "season": "unknown", "confidence": 0.0,
+            "undertone": "unknown", "value": "unknown", "chroma": "unknown",
+            "palette": {}, "raw": {},
+        }
 
     if not result.detections:
         return {
@@ -205,7 +225,15 @@ def get_skin_tone_and_season(image_rgb: np.ndarray) -> dict:
             "palette": {}, "raw": {},
         }
 
-    return analyze_seasonal_color_type(face_crop)
+    try:
+        return analyze_seasonal_color_type(face_crop)
+    except Exception as e:
+        logger.error(f"Color analysis failed on cropped face: {e}", exc_info=True)
+        return {
+            "season": "unknown", "confidence": 0.0,
+            "undertone": "unknown", "value": "unknown", "chroma": "unknown",
+            "palette": {}, "raw": {},
+        }
 
 
 # ---------- MAIN ----------

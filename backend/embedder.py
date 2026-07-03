@@ -6,11 +6,20 @@ Key optimisation (v2):
   Per-request similarity is then a single batched matmul — O(1) regardless
   of dataset size — instead of 579 individual dot-product calls.
 """
+import io
 import os
 import pickle
 import torch
 import clip
 from PIL import Image
+
+
+class _CpuUnpickler(pickle.Unpickler):
+    """Load a pickle that may contain CUDA tensors on a CPU-only machine."""
+    def find_class(self, module: str, name: str):
+        if module == "torch.storage" and name == "_load_from_bytes":
+            return lambda b: torch.load(io.BytesIO(b), map_location="cpu", weights_only=False)
+        return super().find_class(module, name)
 
 # ---------------------------------------------------------------------------
 # Model — loaded once at module import time
@@ -62,7 +71,12 @@ def compute_embeddings(outfits: list[dict], force_recompute: bool = False) -> li
     if not force_recompute and os.path.exists(_CACHE_PATH):
         print("[Embedder] Loading cached embeddings …")
         with open(_CACHE_PATH, "rb") as f:
-            cache: dict[str, torch.Tensor] = pickle.load(f)
+            raw: dict[str, torch.Tensor] = _CpuUnpickler(f).load()
+        # Move tensors to whatever device is available on this machine
+        cache: dict[str, torch.Tensor] = {
+            k: (v.to(device) if isinstance(v, torch.Tensor) else v)
+            for k, v in raw.items()
+        }
 
         all_cached = all(o["filename"] in cache for o in outfits)
         if all_cached:
